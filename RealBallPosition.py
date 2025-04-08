@@ -4,8 +4,9 @@ import numpy as np
 
 class BallDetection:
     def __init__(self,
-                 hsv_lower: tuple[float] = (90, 100, 70),
-                 hsv_upper: tuple[float] = (135, 255, 255),
+
+                 hsv_lower: tuple[float] = (37, 109, 132),
+                 hsv_upper: tuple[float] =  (180, 255, 255),
                  calibration_matrix_path: str = 'calibration_matrix.npy',
                  distortion_path: str = 'distortion_coefficients.npy',
                  tag_size: float = 17 / 8 * 0.0254,
@@ -32,11 +33,14 @@ class BallDetection:
         mask = self._mask(frame)
         contours = self._draw_contours(frame, mask)
         centers = self._draw_centers(frame, contours)
-
-        if len(centers) != 1 or self._rvec is None or self._tvec is None:
+        self._pose_estimation(frame)
+        # print(len(centers))
+        # print(self._rvec is None)
+        # print(self._tvec is None)
+        if len(centers) == 0 or self._rvec is None or self._tvec is None:
             return None, None, None
 
-        points = np.array([centers[0]], dtype=np.float32)
+        points = np.array([[centers[0], centers[1]]], dtype=np.float32)
         undistorted = cv2.undistortPoints(points, self._calibration_matrix, self._distortion_coefficient)
         ray = np.array([undistorted[0][0][0], undistorted[0][0][1], 1.0])
 
@@ -124,7 +128,7 @@ if __name__ == '__main__':
 
         # Get ball position
         x, y, z = ball_detection.get_position(frame)
-
+        print(f"Ball position: {x}, {y}, {z}")
         # Display frame
         cv2.imshow("Ball Detection", frame)
         if cv2.waitKey(1) == ord('q'):
