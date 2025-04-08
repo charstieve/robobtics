@@ -3,6 +3,7 @@ from interbotix_common_modules.common_robot.robot import robot_shutdown, robot_s
 from interbotix_xs_modules.xs_robot.arm import InterbotixManipulatorXS
 import numpy as np
 import time
+import BallTracking as bt
 
 def multiple_points(bot, point_list):
     for point in point_list:
@@ -30,15 +31,40 @@ def main():
         gripper_name='gripper',
     )
 
+    ball_detection = bt.BallDetection()
+
     robot_startup()
 
     bot.arm.set_trajectory_time(moving_time=1)
     bot.arm.go_to_sleep_pose()
     bot.arm.go_to_home_pose()
+    tag_offsert_x = 7 * 0.0254
+    tag_offsert_y = 0
+    z = 0.06
+    while True:
+        # grab user input just press enter to continue
+        user_input = input("Press Enter to continue...")
+        if user_input == "q":
+            break
 
-    #Move from one point to another, points are in meters
-    #pta = [0.2, 0.1, 0.2]
-    #ptb = [0.1, 0.2, 0.1]
+        #Get the ball position
+        ball_position = ball_detection.get_ball_position()
+        print(f"Ball position: {ball_position}")
+
+        #Go to the ball position
+        bot.arm.set_ee_pose_components(x=ball_position[0], y=ball_position[1], z=ball_position[2])
+        bot.arm.set_trajectory_time(moving_time=1)
+
+        # hit the ball 3 cm forward in both x and y
+        bot.arm.set_ee_pose_components(x=ball_position[0] + 0.03, y=ball_position[1] + 0.03, z=ball_position[2])
+
+        # bot.arm.go_to_sleep_pose()
+
+
+
+        #Move from one point to another, points are in meters
+        #pta = [0.2, 0.1, 0.2]
+        #ptb = [0.1, 0.2, 0.1]
 
     #pta_to_ptb(bot, pta, ptb)
 
@@ -51,58 +77,58 @@ def main():
     #Figuring out where the points are
     #Half a meter too big!
     #0 values error out
-    points = [
-        # [0.2, 0.1, 0.1],
-        # [0.1, 0.2, 0.1],
-        # [0.1, 0.1, 0.2],
+    # points = [
+    #     # [0.2, 0.1, 0.1],
+    #     # [0.1, 0.2, 0.1],
+    #     # [0.1, 0.1, 0.2],
 
-        #[0.1, 0.1, 0.1], # not valid
-        #Tested x values
-        #[0.2, 0.1, 0.1],
-        #[0.3, 0.1, 0.1],
-        #[0.4, 0.1, 0.1],
+    #     #[0.1, 0.1, 0.1], # not valid
+    #     #Tested x values
+    #     #[0.2, 0.1, 0.1],
+    #     #[0.3, 0.1, 0.1],
+    #     #[0.4, 0.1, 0.1],
 
-        #Tested y values    
-        # [0.2, 0.2, 0.1],
-        # [0.2, 0.3, 0.1],
-        # [0.2, 0.4, 0.1],
+    #     #Tested y values    
+    #     # [0.2, 0.2, 0.1],
+    #     # [0.2, 0.3, 0.1],
+    #     # [0.2, 0.4, 0.1],
 
-        #[0.2, 0, 0.1],
-        [0.3, 0, 0.06],
-        [0.4, 0, 0.06],
+    #     #[0.2, 0, 0.1],
+    #     [0.3, 0, 0.06],
+    #     [0.4, 0, 0.06],
 
-        # [0.2, 0.1, 0.2],
+    #     # [0.2, 0.1, 0.2],
         
-        [0.25, -0.1, 0.05],
-        [0.30, -0.15, 0.05]
+    #     [0.25, -0.1, 0.05],
+    #     [0.30, -0.15, 0.05]
 
-        # [0.03, 0.0, 0.1],
-        # [0.04, 0.0, 0.1],
+    #     # [0.03, 0.0, 0.1],
+    #     # [0.04, 0.0, 0.1],
 
-        # [0.025, -0.05, 0.1],
-        # [0.027, -0.07, 0.1],
-    ]
+    #     # [0.025, -0.05, 0.1],
+    #     # [0.027, -0.07, 0.1],
+    # ]
 
-    bot.arm.go_to_home_pose()
+    # bot.arm.go_to_home_pose()
     # time.sleep(1)
 
     # multiple_points(bot, points)
     #Ball 1
-    multiple_points(bot, [[0.3, 0, 0.07],[0.4, 0, 0.07]])
-    time.sleep(0.5)
-    bot.arm.set_trajectory_time(moving_time=1)
-    bot.arm.go_to_sleep_pose()
-    time.sleep(0.5)
-    bot.arm.set_trajectory_time(moving_time=1)
-    multiple_points(bot, [[0.25, -0.1, 0.07], [0.35, -0.2, 0.07]])
-    time.sleep(0.5)
-    bot.arm.set_trajectory_time(moving_time=1)
-    bot.arm.go_to_sleep_pose()
-    multiple_points(bot, [[0.25, 0.1, 0.07], [0.35, 0.2, 0.07]])
+    # multiple_points(bot, [[0.3, 0, 0.07],[0.4, 0, 0.07]])
+    # time.sleep(0.5)
+    # bot.arm.set_trajectory_time(moving_time=1)
+    # bot.arm.go_to_sleep_pose()
+    # time.sleep(0.5)
+    # bot.arm.set_trajectory_time(moving_time=1)
+    # multiple_points(bot, [[0.25, -0.1, 0.07], [0.35, -0.2, 0.07]])
+    # time.sleep(0.5)
+    # bot.arm.set_trajectory_time(moving_time=1)
+    # bot.arm.go_to_sleep_pose()
+    # multiple_points(bot, [[0.25, 0.1, 0.07], [0.35, 0.2, 0.07]])
 
     
-    bot.arm.set_trajectory_time(moving_time=1)
-    bot.arm.go_to_sleep_pose()
+    # bot.arm.set_trajectory_time(moving_time=1)
+    # bot.arm.go_to_sleep_pose()
 
     robot_shutdown()
 
