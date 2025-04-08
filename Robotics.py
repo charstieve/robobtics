@@ -3,19 +3,8 @@ from interbotix_common_modules.common_robot.robot import robot_shutdown, robot_s
 from interbotix_xs_modules.xs_robot.arm import InterbotixManipulatorXS
 import numpy as np
 import time
-import BallTracking as bt
-
-def multiple_points(bot, point_list):
-    for point in point_list:
-        print(f'going to point {point}')
-        bot.arm.set_ee_pose_components(x=point[0], y=point[1], z=point[2])
-        bot.arm.set_trajectory_time(moving_time=0.5)
-        
-        # time.sleep(1)
-
-def pta_to_ptb(bot, pta, ptb):
-    bot.arm.set_ee_pose_components(x=pta[0], y=pta[1], z=pta[2])
-    bot.arm.set_ee_pose_components(x=ptb[0], y=ptb[1], z=ptb[2])
+from RealBallPosition import BallDetection
+import cv2
 
 def set_gripper(bot, closed: bool):
     if closed:
@@ -25,112 +14,60 @@ def set_gripper(bot, closed: bool):
 
     
 def main():
-    bot = InterbotixManipulatorXS(
-        robot_model='px150',
-        group_name='arm',
-        gripper_name='gripper',
-    )
+    try:
+        bot = InterbotixManipulatorXS(
+            robot_model='rx200',
+            group_name='arm',
+            gripper_name='gripper',
+        )
 
-    ball_detection = bt.BallDetection()
+        cam = cv2.VideoCapture(1)
+        ball_detection = BallDetection()
 
-    robot_startup()
-
-    bot.arm.set_trajectory_time(moving_time=1)
-    bot.arm.go_to_sleep_pose()
-    bot.arm.go_to_home_pose()
-    tag_offsert_x = 7 * 0.0254
-    tag_offsert_y = 0
-    z = 0.06
-    while True:
-        # grab user input just press enter to continue
-        user_input = input("Press Enter to continue...")
-        if user_input == "q":
-            break
-
-        #Get the ball position
-        ball_position = ball_detection.get_ball_position()
-        print(f"Ball position: {ball_position}")
-
-        #Go to the ball position
-        bot.arm.set_ee_pose_components(x=ball_position[0], y=ball_position[1], z=ball_position[2])
+        robot_startup()
         bot.arm.set_trajectory_time(moving_time=1)
+        bot.arm.go_to_sleep_pose()
+        bot.arm.go_to_home_pose()
 
-        # hit the ball 3 cm forward in both x and y
-        bot.arm.set_ee_pose_components(x=ball_position[0] + 0.03, y=ball_position[1] + 0.03, z=ball_position[2])
+        tag_offset_x = 0.0
+        tag_offset_y = 3 * 0.0254
+        z = 0.06
 
-        # bot.arm.go_to_sleep_pose()
+        while True:
+            try:
 
+                _, frame = cam.read()
+                if not _:
+                    print("Failed to capture frame")
+                    continue
+                ball_position = ball_detection.get_position(frame)
+                cv2.imshow("Ball Detection", frame)
 
+                if ball_position == (None, None, None):
+                    print("No ball detected")
+                    continue
+                x, y, z = ball_position
+                print(f"Ball position: {ball_position}")
+                # Go to ball
+                user_input = input("Press Enter to continue...")
+                print(ball_position)
+                if user_input.lower() == 'q':
+                    print("Exiting...")
+                    cam.release()
+                    cv2.destroyAllWindows()
+                    robot_shutdown()
+                    break
+                bot.arm.set_ee_pose_components(x=x, y= + tag_offset_y, z=0.06)
+                hit_distance = 0.03 # The distance to move forwards so that the arm hits the ball
+                bot.arm.set_ee_pose_components(x=x + hit_distance, y=y + tag_offset_y + hit_distance, z=0.06)
+            except Exception as e:
+                print(f"Error: {e}")
+            finally:
+                print('Terminating ...')
+                cam.release()
+                cv2.destroyAllWindows()
+                robot_shutdown()
 
-        #Move from one point to another, points are in meters
-        #pta = [0.2, 0.1, 0.2]
-        #ptb = [0.1, 0.2, 0.1]
-
-    #pta_to_ptb(bot, pta, ptb)
-
-    #Check if points move relative to eachother or on a global scale
-    # pta = [0.1, 0.2, 0.1]
-    # ptb = [0.1, 0.2, 0.1]
-
-    #pta_to_ptb(bot, pta, ptb)
-
-    #Figuring out where the points are
-    #Half a meter too big!
-    #0 values error out
-    # points = [
-    #     # [0.2, 0.1, 0.1],
-    #     # [0.1, 0.2, 0.1],
-    #     # [0.1, 0.1, 0.2],
-
-    #     #[0.1, 0.1, 0.1], # not valid
-    #     #Tested x values
-    #     #[0.2, 0.1, 0.1],
-    #     #[0.3, 0.1, 0.1],
-    #     #[0.4, 0.1, 0.1],
-
-    #     #Tested y values    
-    #     # [0.2, 0.2, 0.1],
-    #     # [0.2, 0.3, 0.1],
-    #     # [0.2, 0.4, 0.1],
-
-    #     #[0.2, 0, 0.1],
-    #     [0.3, 0, 0.06],
-    #     [0.4, 0, 0.06],
-
-    #     # [0.2, 0.1, 0.2],
-        
-    #     [0.25, -0.1, 0.05],
-    #     [0.30, -0.15, 0.05]
-
-    #     # [0.03, 0.0, 0.1],
-    #     # [0.04, 0.0, 0.1],
-
-    #     # [0.025, -0.05, 0.1],
-    #     # [0.027, -0.07, 0.1],
-    # ]
-
-    # bot.arm.go_to_home_pose()
-    # time.sleep(1)
-
-    # multiple_points(bot, points)
-    #Ball 1
-    # multiple_points(bot, [[0.3, 0, 0.07],[0.4, 0, 0.07]])
-    # time.sleep(0.5)
-    # bot.arm.set_trajectory_time(moving_time=1)
-    # bot.arm.go_to_sleep_pose()
-    # time.sleep(0.5)
-    # bot.arm.set_trajectory_time(moving_time=1)
-    # multiple_points(bot, [[0.25, -0.1, 0.07], [0.35, -0.2, 0.07]])
-    # time.sleep(0.5)
-    # bot.arm.set_trajectory_time(moving_time=1)
-    # bot.arm.go_to_sleep_pose()
-    # multiple_points(bot, [[0.25, 0.1, 0.07], [0.35, 0.2, 0.07]])
-
-    
-    # bot.arm.set_trajectory_time(moving_time=1)
-    # bot.arm.go_to_sleep_pose()
-
-    robot_shutdown()
 
 if __name__ == '__main__':
     main()
