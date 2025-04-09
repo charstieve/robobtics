@@ -36,11 +36,13 @@ def main():
     while True:
         try:
             _, frame = cam.read()
+
+            cv2.imshow("Ball Detection", frame)
+
             if not _:
                 print("Failed to capture frame")
                 continue
             ball_position = ball_detection.get_position(frame)
-            cv2.imshow("Ball Detection", frame)
 
             if ball_position == (None, None, None):
                 print("No ball detected")
@@ -56,7 +58,8 @@ def main():
                 cv2.destroyAllWindows()
                 robot_shutdown()
                 break
-            bot.arm.set_ee_pose_components(x=x, y=+ tag_offset_y, z=0.06)
+
+            bot.arm.set_ee_pose_components(x=x, y =+ tag_offset_y, z=0.06)
             hit_distance = 0.03  # The distance to move forwards so that the arm hits the ball
             bot.arm.set_ee_pose_components(x=x + hit_distance, y=y + tag_offset_y + hit_distance, z=0.06)
         except:

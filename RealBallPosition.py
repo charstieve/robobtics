@@ -1,15 +1,14 @@
 import cv2
 import numpy as np
 
-
 class BallDetection:
     def __init__(self,
 
-                 hsv_lower: tuple[float] = (37, 109, 132),
-                 hsv_upper: tuple[float] =  (180, 255, 255),
+                 hsv_lower: tuple[float] = (37, 109, 132), #[90, 100, 70]
+                 hsv_upper: tuple[float] =  (180, 255, 255), #[135, 255, 255]
                  calibration_matrix_path: str = 'calibration_matrix.npy',
                  distortion_path: str = 'distortion_coefficients.npy',
-                 tag_size: float = 17 / 8 * 0.0254,
+                 tag_size: float = 2 * 0.0254,
                  tag_family: int = cv2.aruco.DICT_APRILTAG_36h11,
                  tag_id: int = 2):
         self._hsv_lower = np.array(hsv_lower)
@@ -52,11 +51,31 @@ class BallDetection:
 
         return float(point[0]), float(point[1]), float(point[2])
 
+    # https://stackoverflow.com/questions/45095734/python-finding-contours-of-different-colors-on-an-image
+    # Convert the frame from Blue Green Red color scale to HSV color scale, then find anything in the frame 
+    # that is within the HSV color range in the footage
     def _mask(self, frame):
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv_frame, self._hsv_lower, self._hsv_upper)
         return mask
+    
+    # Draw contours around the blue that was previously isolated from the frame
+    # RETR_EXTERNAL returns only the outermost contour in case multiple rings of blue are detected
+    # CHAIN_APPROX_SIMPLE returns only the endpoints of the contours instead of every single contour point
+    def _draw_contours(self, frame, mask):
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        largest_contour = sorted(contours, key=cv2.contourArea, reverse=True)[:1]
+        cv2.drawContours(frame, largest_contour, -1, (0, 255, 0), 1)
 
+        return largest_contour
+    
+    # https://pyimagesearch.com/2016/02/01/opencv-center-of-contour/
+    # https://dsp.stackexchange.com/questions/4868/contour-and-area-raw-spatial-and-central-image-moments#8521
+    # https://en.wikipedia.org/wiki/Image_moment#Central_moments
+    # Find the center of the contours drawn around the balls by finding the central moments of the contour
+    # extracting the x and y value of the centroid from that, and drawing the center of the contour into the frame
+    # as well as return both the frame and center.
+    # Moments are used to provide information about an object in an image 
     def _draw_centers(self, frame, contours):
         cX = 0
         cY = 0
@@ -74,13 +93,6 @@ class BallDetection:
 
         centroid = np.array([cX, cY])
         return centroid
-
-    def _draw_contours(self, frame, mask):
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        largest_contour = sorted(contours, key=cv2.contourArea, reverse=True)[:1]
-        cv2.drawContours(frame, largest_contour, -1, (0, 255, 0), 1)
-
-        return largest_contour
 
     def _pose_estimation(self, frame):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -116,10 +128,12 @@ class BallDetection:
 
 
 if __name__ == '__main__':
+
+    # Initialize camera
+    cam = cv2.VideoCapture(1)
+    ball_detection = BallDetection()
+
     while True:
-        # Initialize camera
-        cam = cv2.VideoCapture(0)
-        ball_detection = BallDetection()
 
         # Capture frame
         ret, frame = cam.read()
