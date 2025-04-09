@@ -30,7 +30,7 @@ def main():
     bot.arm.go_to_home_pose()
 
     tag_offset_x = 0.0
-    tag_offset_y = 3 * 0.0254
+    tag_offset_y = 5.6 * 0.0254
     z = 0.06
 
     while True:
@@ -59,9 +59,9 @@ def main():
                 robot_shutdown()
                 break
 
-            bot.arm.set_ee_pose_components(x=x, y =+ tag_offset_y, z=0.06)
+            bot.arm.set_ee_pose_components(y = -x, x = y + tag_offset_y, z=0.06)
             hit_distance = 0.03  # The distance to move forwards so that the arm hits the ball
-            bot.arm.set_ee_pose_components(x=x + hit_distance, y=y + tag_offset_y + hit_distance, z=0.06)
+            bot.arm.set_ee_pose_components(y = -x + hit_distance, x = y + tag_offset_y + hit_distance, z=0.06)
         except:
             break
     print('Terminating ...')
