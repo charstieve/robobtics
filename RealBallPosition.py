@@ -8,7 +8,7 @@ class BallDetection:
                  hsv_upper: tuple[float] =  (180, 255, 255), #[135, 255, 255]
                  calibration_matrix_path: str = 'calibration_matrix.npy',
                  distortion_path: str = 'distortion_coefficients.npy',
-                 tag_size: float = 2 * 0.0254,
+                 tag_size: float = 2, # * 0.0254,
                  tag_family: int = cv2.aruco.DICT_APRILTAG_36h11,
                  tag_id: int = 2):
         self._hsv_lower = np.array(hsv_lower)
