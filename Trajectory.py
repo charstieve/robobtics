@@ -32,13 +32,10 @@ initial state estimate to avoid divergence
 
 
 # class Trajectory:
-
-camera = cv2.VideoCapture(0)
 measured = []
 predicted = []
 
 # load detector
-bd = BallDetection()
 kf = cv2.KalmanFilter(4,2)
 
 kf.measurementMatrix = np.array([[1,0,0,0], [0,1,0,0]], np.float32)
@@ -52,34 +49,76 @@ kf.processNoiseCov = (
               [0, 0, 0, 1]], np.float32)
     * 0.03
 )
-while True:
-    try: 
-        _, frame = camera.read()
+
+if __name__ == '__main__':
+    cam = cv2.VideoCapture(0)
+    ball_detection = BallDetection()
+    while True:
+        # Initialize camera
+        print('Here')
         
-        if not _:
-                print("Failed to capture frame")
-                continue
+        # Capture frame
+        ret, frame = cam.read()
+        if not ret:
+            break
+
+        # Get ball position
+        cx, cy, cz = ball_detection.get_position(frame)
+        print(f"Ball position: {cx}, {cy}, {cz}")
+        ret, frame = cam.read()
+        
+        if not ret:
+            #print("Failed to capture frame")
+            continue
             
-        cx,cy,cz = bd.get_position(frame)
+        if cx is None or cy is None or cz is None:
+            print("No ball detected")
+            continue
+
         measured.append((cx,cy))
         print(f"Ball position: {cx}, {cy}, {cz}")
         
-        kf.correct((cx,cy))
+        kf.correct(np.array([[cx], [cy]], np.float32))
         tp = kf.predict()
-        predicted.append((int(tp[0]), int(tp[1])))
+        predicted.append((int(tp[0].item()), int(tp[1].item())))
         
         cv2.circle(frame, (int(tp[0]), int(tp[1])), 20, (255,0,0), 4)
         # Display frame
         cv2.imshow("Ball Detection", frame)
+        # Display frame
+        cv2.imshow("Ball Detection", frame)
         if cv2.waitKey(1) == ord('q'):
             break
+# while True:
+#     try: 
+#         ret, frame = camera.read()
+        
+#         if not ret:
+#             #print("Failed to capture frame")
+#             continue
+            
+#         cx,cy,cz = bd.get_position(frame)
+#         if cx is None or cy is None or cz is None:
+#             print("No ball detected")
+#             continue
 
+#         measured.append((cx,cy))
+#         print(f"Ball position: {cx}, {cy}, {cz}")
         
+#         kf.correct(np.array([[cx], [cy]], np.float32))
+#         tp = kf.predict()
+#         predicted.append((int(tp[0].item()), int(tp[1].item())))
         
-        
-    except:
-        break
+#         cv2.circle(frame, (int(tp[0]), int(tp[1])), 20, (255,0,0), 4)
+#         # Display frame
+#         cv2.imshow("Ball Detection", frame)
+#         # if cv2.waitKey(1) == ord('q'):
+#         #     break
+#     except Exception as e:
+#         print(f"Error: {e}")
+#         break
+
     
-    print('Terminating ...')
-    camera.release()
-    cv2.destroyAllWindows()
+#     print('Terminating ...')
+#     camera.release()
+#     cv2.destroyAllWindows()
