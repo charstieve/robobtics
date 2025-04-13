@@ -5,12 +5,12 @@ import numpy as np
 class BallDetection:
     def __init__(self,
 
-                 hsv_lower: tuple[float] = (37, 109, 132),
-                 hsv_upper: tuple[float] =  (180, 255, 255),
+                 hsv_lower: tuple[float] = (0, 150, 100),
+                 hsv_upper: tuple[float] =  (10, 255, 255),
                  calibration_matrix_path: str = 'calibration_matrix.npy',
                  distortion_path: str = 'distortion_coefficients.npy',
                 #  tag_size: float = 2 * 0.0254,
-                tag_size: float = 2,
+                 tag_size: float = 2 * 0.0254,
                  tag_family: int = cv2.aruco.DICT_APRILTAG_36h11,
                  tag_id: int = 2):
         self._hsv_lower = np.array(hsv_lower)
