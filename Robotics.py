@@ -8,6 +8,7 @@ import cv2
 import threading
 
 ball_position = None
+paused = False
 
 def set_gripper(bot, closed: bool):
     if closed:
@@ -20,6 +21,8 @@ def robot_thread_func(bot):
     tag_offset_y = 5 * 0.0254
     z = 0.06
     while True:
+        if paused:
+            continue
         print("hello!")
         try:
             if ball_position == (None, None, None) or ball_position == None:
@@ -40,7 +43,7 @@ def robot_thread_func(bot):
             continue
 
 def main():
-    global ball_position
+    global ball_position, paused
     bot = InterbotixManipulatorXS(
         robot_model='rx200',
         group_name='arm',
@@ -69,10 +72,13 @@ def main():
         ball_position = ball_detection.get_position(frame)
         # print("Ball position is: ", ball_position)
         cv2.imshow("Ball Detection", frame)
-        cv2.waitKey(1)
-        if cv2.waitKey(1) == ord('q'):
-            bot.arm.go_to_sleep_pose()
-            break
+        match cv2.waitKey(1):
+            case ord('q'):
+                bot.arm.go_to_sleep_pose()
+                break
+            case ord('p'):
+                paused = not paused
+
 
 
 
