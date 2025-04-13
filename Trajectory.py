@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import cv2
 from RealBallPosition import BallDetection
 import numpy as np
@@ -57,8 +58,9 @@ kf.measurementNoiseCov = np.array([[1, 0],
 # error covariance matrix
 # Error covariance matrix
 kf.errorCovPost = np.eye(4, dtype=np.float32)
-
+print("hi")
 if __name__ == '__main__':
+    print("hi")
     # load live camera processing
     camera = cv2.VideoCapture(0)
     bd = BallDetection() # load detector
@@ -73,6 +75,7 @@ if __name__ == '__main__':
         kf.statePre = np.array([[cx], [cy], [0], [0]], dtype=np.float32)
 
     while True:
+        print("in here")
         # read each frame
         ret, frame = camera.read()
         if not ret:
@@ -81,7 +84,7 @@ if __name__ == '__main__':
         # get prediction from kf
         prediction = kf.predict()
         pre_x, pre_y = int(prediction[0]), int(prediction[1])
-        predicted.append((pre_x, pre_y))
+        predicted.append((pre_x.item(), pre_y.item()))
         
         cv2.circle(frame, (pre_x, pre_y), 20, (255,0,0), -1)
         
