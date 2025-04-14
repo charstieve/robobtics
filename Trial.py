@@ -39,15 +39,35 @@ def set_gripper(bot, closed: bool):
 #         except Exception as e:
 #             print(f"Error in robot thread: {e}")
 #             continue
+
+
+def increase_motor_accuracies(bot: InterbotixManipulatorXS):
+    # ensure the bot is in a safe pose to torque off
+    print("Checking values of motor 'accuracy' registers to attempt updates.")
+    JOINT_DEFAULTS = {'waist': 640, 'shoulder': 800, 'elbow': 800, 'wrist_angle': 640, 'wrist_rotate': 640}
+    torque = False
+    # update register values for each motor
+    for joint in bot.arm.group_info.joint_names:
+         bot.core.robot_set_motor_pid_gains(
+                cmd_type='single',
+                name=joint,
+                kp_pos=JOINT_DEFAULTS[joint] + 150,
+            )
+        # read the old value
+        
+    print("Enabling torque for robot arm")
+    bot.core.robot_torque_enable(cmd_type="group", name="all", enable=True)
+    time.sleep(1)
+
 def robot_thread_func(bot):
-    LOWER = 1 * 0.0254
-    UPPER = 10 * 0.0254
+    LOWER = 3 * 0.0254
+    UPPER = 5 * 0.0254
     # HOME_DISTANCE = 15 * 0.0254
-    HOME_DISTANCE = 5 * 0.0254
+    HOME_DISTANCE = 7 * 0.0254
     tag_offset_x = 0.0
     tag_offset_y = 5 * 0.0254
     # tag_offset_y = 5
-    hit_distance = 0.1  # The distance to move forwards so that the arm hits the ball
+    hit_distance = 0.15 # The distance to move forwards so that the arm hits the ball
     z = 0.06
     previous_angle = None
     while True:
@@ -80,16 +100,16 @@ def robot_thread_func(bot):
                 previous_angle = None
                 continue
 
-            if previous_angle is not None and abs(previous_angle - angle) < 0.1:
-                previous_angle = angle
-                print("Angle is similar")
-                # continue
+            # if previous_angle is not None and abs(previous_angle - angle) < 0.1:
+            #     previous_angle = angle
+            #     print("Angle is similar")
+            #     continue
                 
             previous_angle = angle
 
             # Lowerbound coordinates
-            hx = distance * math.cos(angle)
-            hy = distance * math.sin(angle)
+            hx = HOME_DISTANCE * math.cos(angle)
+            hy = HOME_DISTANCE * math.sin(angle)
 
             print(f"hx: {hx}, hy: {hy}")
             print(f"ax: {ax}, ay: {ay}")
@@ -114,8 +134,10 @@ def main():
     # ball_detection = BallDetection()
 
     robot_startup()
-    bot.arm.set_trajectory_time(moving_time=3.5)
+    increase_motor_accuracies(bot)
     bot.arm.go_to_sleep_pose()
+    bot.arm.set_trajectory_time(moving_time=3.5)
+    
     # bot.arm.go_to_home_pose()
     print('Going to second home')
     bot.arm.set_ee_pose_components(y=0.05, x = 10 * 0.0254 , z=0.07)
