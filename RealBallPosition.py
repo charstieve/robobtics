@@ -79,6 +79,11 @@ class BallDetection:
     def _draw_contours(self, frame, mask):
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         largest_contour = sorted(contours, key=cv2.contourArea, reverse=True)[:1]
+        if len(largest_contour) >= 0:
+            if cv2.contourArea(largest_contour[0]) < 200:
+                return []
+        
+
         cv2.drawContours(frame, largest_contour, -1, (0, 255, 0), 1)
 
         return largest_contour
